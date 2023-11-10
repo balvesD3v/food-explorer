@@ -20,6 +20,7 @@ class DishesController {
 
     const [dishes_id] = await knex("dishes").insert({
       name,
+      user_id,
       description,
       discount,
       price,
@@ -38,6 +39,32 @@ class DishesController {
     return response
       .status(201)
       .json({ message: { name, description, price, discount, user_id } });
+  }
+
+  async searchDishes(request, response) {
+    const { name, ingredients, user_id } = request.query;
+
+    let dishes;
+
+    if (!name && !ingredients && !user_id) {
+      dishes = await knex("dishes").select("*");
+    } else if (ingredients) {
+      const filterIngredients = ingredients.split(",").map((tag) => tag.trim());
+
+      dishes = await knex("ingredients")
+        .select(["dishes.id", "dishes.name", "dishes.user_id"])
+        .join("dishes", "dishes.id", "ingredients.dishes_id")
+        .where("dishes.user_id", user_id)
+        .where("dishes.name", "like", `%${name}%`)
+        .whereIn("ingredients.name", filterIngredients);
+    } else {
+      dishes = await knex("dishes")
+        .where({ user_id })
+        .whereLike("name", `%${name}%`)
+        .orderBy("name");
+    }
+
+    return response.json(dishes);
   }
 
   async showDishes(request, response) {
