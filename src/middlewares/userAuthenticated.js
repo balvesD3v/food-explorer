@@ -18,7 +18,10 @@ function userAuthenticated(request, response, next) {
     };
 
     return next();
-  } catch {
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
     throw new AppError("JWT Token inválido", 401);
   }
 }

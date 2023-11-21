@@ -79,14 +79,38 @@ class DishesController {
   }
 
   async updateDish(request, response) {
-    const { nameDishe } = request.body;
+    const { newNameDish, newDescription, newDiscount, newPrice } = request.body;
+    const { dish_id } = request.params;
 
-    const nameDishesExists = await knex("dishes").where({ name: nameDishe });
-    if (!nameDishesExists || nameDishesExists.length === 0) {
+    const dish = await knex("dishes").where({ id: dish_id }).first();
+    if (!dish) {
       throw new AppError("Este prato não existe");
     }
 
-    return response.json(nameDishesExists);
+    await knex("dishes").where({ id: dish_id }).update({
+      name: newNameDish,
+      description: newDescription,
+      discount: newDiscount,
+      price: newPrice,
+    });
+
+    const updatedDish = await knex("dishes").where({ id: dish_id }).first();
+
+    return response.json(updatedDish);
+  }
+
+  async deleteDish(request, response) {
+    const { dish_id } = request.params;
+
+    const dish = await knex("dishes").where({ id: dish_id }).first();
+
+    if (!dish) {
+      throw new AppError("Este prato não existe.");
+    }
+
+    await knex("dishes").where({ id: dish_id }).delete();
+
+    return response.json("Prato deletado");
   }
 }
 
