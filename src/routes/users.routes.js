@@ -3,8 +3,10 @@ const multer = require("multer");
 const uploadConfig = require("../configs/upload");
 const UsersController = require("../controllers/UsersController");
 const userAuthenticated = require("../middlewares/userAuthenticated");
+const UserAvatarController = require("../controllers/UserAvatarController");
 
 const usersController = new UsersController();
+const userAvatarController = new UserAvatarController();
 const usersRoutes = Router();
 const upload = multer(uploadConfig.MULTER);
 
@@ -14,10 +16,7 @@ usersRoutes.patch(
   "/avatar",
   userAuthenticated,
   upload.single("avatar"),
-  (request, response) => {
-    console.log(request.file.filename);
-    response.json();
-  }
+  userAvatarController.updateAvatar
 );
 
 module.exports = usersRoutes;

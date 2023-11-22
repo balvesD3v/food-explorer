@@ -4,7 +4,7 @@ exports.up = (knex) =>
     table.integer("user_id").references("id").inTable("users");
     table.string("name");
     table.text("description");
-    table.string("image_url");
+    table.string("image");
     table.integer("discount");
     table.integer("price").notNullable();
     table.string("categories");

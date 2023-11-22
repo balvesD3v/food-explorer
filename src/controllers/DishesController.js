@@ -105,7 +105,7 @@ class DishesController {
     const dish = await knex("dishes").where({ id: dish_id }).first();
 
     if (!dish) {
-      throw new AppError("Este prato não existe.");
+      throw new AppError("Couldn't find dish", 404);
     }
 
     await knex("dishes").where({ id: dish_id }).delete();
