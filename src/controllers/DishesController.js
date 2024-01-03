@@ -4,14 +4,13 @@ const AppError = require("../utils/AppError");
 class DishesController {
   async createDishes(request, response) {
     const { name, description, ingredients, discount, price } = request.body;
-    const { user_id } = request.params;
+    const user_id = request.user.id;
 
     const user = await knex("users").where({ id: user_id }).first();
 
     if (!user) {
       throw new AppError("Usuário não encontrado", 404);
     }
-
     const dishesExists = await knex("dishes").where({ name }).first();
 
     if (dishesExists) {
