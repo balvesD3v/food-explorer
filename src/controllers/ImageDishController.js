@@ -5,7 +5,30 @@ const AppError = require("../utils/AppError");
 const diskStorage = new DiskStorage();
 
 class ImageDishController {
-  async updateImageDish(request, response) {
+  async uploadImage(request, response) {
+    try {
+      const imageFilename = request.file.filename;
+
+      const filename = await diskStorage.saveFile(imageFilename);
+
+      const dish = await knex("dishes").first();
+
+      if (!dish) {
+        return response.status(404).json({ error: "Prato não encontrado" });
+      }
+
+      dish.image = filename;
+
+      await knex("dishes").insert({ image: filename });
+
+      return response.json(dish);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).json({ error: "Erro interno do servidor" });
+    }
+  }
+
+  async updateImage(request, response) {
     try {
       const imageFilename = request.file.filename;
 

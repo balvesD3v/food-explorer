@@ -1,6 +1,4 @@
-const sqliteConnection = require("../database/sqlite/index");
 const AppError = require("../utils/AppError");
-const bcrypt = require("bcrypt");
 
 class UsersValidatedController {
   async index(request, response) {

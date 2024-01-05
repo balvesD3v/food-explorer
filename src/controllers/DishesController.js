@@ -3,7 +3,8 @@ const AppError = require("../utils/AppError");
 
 class DishesController {
   async createDishes(request, response) {
-    const { name, description, ingredients, discount, price } = request.body;
+    const { name, description, ingredients, discount, categories, price } =
+      request.body;
     const user_id = request.user.id;
 
     const user = await knex("users").where({ id: user_id }).first();
@@ -23,6 +24,7 @@ class DishesController {
       description,
       discount,
       price,
+      categories,
     });
 
     const ingredientsInsert = ingredients.map((name) => {
