@@ -1,59 +1,43 @@
-const DiskStorage = require("../providers/DiskStorage");
 const knex = require("../database/knex");
 const AppError = require("../utils/AppError");
-
-const diskStorage = new DiskStorage();
+const DiskStorage = require("../providers/DiskStorage");
 
 class ImageDishController {
-  async uploadImage(request, response) {
-    try {
-      const imageFilename = request.file.filename;
+  async update(request, respose) {
+    const { dish_id } = request.params;
+    const imageFileName = request.file.filename;
 
-      const filename = await diskStorage.saveFile(imageFilename);
+    const diskStorage = new DiskStorage();
 
-      const dish = await knex("dishes").first();
+    const dish = await knex("dishes").where({ id: dish_id }).first();
 
-      if (!dish) {
-        return response.status(404).json({ error: "Prato não encontrado" });
-      }
-
-      dish.image = filename;
-
-      await knex("dishes").insert({ image: filename });
-
-      return response.json(dish);
-    } catch (error) {
-      console.error(error);
-      return response.status(500).json({ error: "Erro interno do servidor" });
+    if (!dish) {
+      throw new AppError(
+        "Somente usuários autenticados podem mudar o avatar",
+        401
+      );
     }
+    if (dish.image) {
+      await diskStorage.deleteFile(dish.image);
+    }
+
+    const filename = await diskStorage.saveFile(imageFileName);
+    dish.image = filename;
+
+    await knex("dishes").update(dish).where({ id: dish_id });
+    return respose.json(dish);
   }
 
-  async updateImage(request, response) {
-    try {
-      const imageFilename = request.file.filename;
+  async getImage(request, response) {
+    const { id } = request.body;
 
-      const dish = await knex("dishes").first();
+    const checkDishExists = await knex("dishes").select("*").where({ id: id });
 
-      if (!dish) {
-        throw new AppError(
-          "Somente usuário autorizados podem alterar a imagem"
-        );
-      }
-
-      if (dish.image) {
-        await diskStorage.deleteFile(dish.image);
-      }
-
-      const filename = await diskStorage.saveFile(imageFilename);
-      dish.image = filename;
-
-      await knex("dishes").where({ id: dish.id }).update({ image: dish.image });
-
-      return response.json(dish);
-    } catch (error) {
-      console.error(error);
-      return response.status(500).json({ error: "Erro interno do servidor" });
+    if (!checkDishExists) {
+      throw new AppError("Este prato não existe");
     }
+    console.log(checkDishExists);
+    return response.json(checkDishExists);
   }
 }
 

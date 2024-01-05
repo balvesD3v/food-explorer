@@ -35,10 +35,13 @@ dishesRoutes.get("/:id", dishesController.showDishes);
 
 dishesRoutes.get("/", dishesController.searchDishes);
 
-dishesRoutes.post(
-  "/image",
+dishesRoutes.patch(
+  "/:dish_id/image",
+  verifyUserAuthorization("admin"),
   upload.single("image"),
-  imageDishController.updateImage
+  imageDishController.update
 );
+
+dishesRoutes.get("/image", imageDishController.getImage);
 
 module.exports = dishesRoutes;

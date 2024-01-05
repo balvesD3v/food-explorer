@@ -3,43 +3,49 @@ const AppError = require("../utils/AppError");
 
 class DishesController {
   async createDishes(request, response) {
-    const { name, description, ingredients, discount, categories, price } =
-      request.body;
-    const user_id = request.user.id;
+    try {
+      const { name, description, ingredients, discount, categories, price } =
+        request.body;
+      const user_id = request.user.id;
 
-    const user = await knex("users").where({ id: user_id }).first();
+      const user = await knex("users").where({ id: user_id }).first();
 
-    if (!user) {
-      throw new AppError("Usuário não encontrado", 404);
-    }
-    const dishesExists = await knex("dishes").where({ name }).first();
+      if (!user) {
+        throw new AppError("Usuário não encontrado", 404);
+      }
 
-    if (dishesExists) {
-      throw new AppError("Um prato com o mesmo nome já existe");
-    }
+      const dishesExists = await knex("dishes").where({ name }).first();
 
-    const [dishes_id] = await knex("dishes").insert({
-      name,
-      user_id,
-      description,
-      discount,
-      price,
-      categories,
-    });
+      if (dishesExists) {
+        throw new AppError("Um prato com o mesmo nome já existe");
+      }
 
-    const ingredientsInsert = ingredients.map((name) => {
-      return {
+      const [dishes_id] = await knex("dishes").insert({
         name,
-        dishes_id,
         user_id,
-      };
-    });
+        description,
+        discount,
+        price,
+        categories,
+      });
 
-    await knex("ingredients").insert(ingredientsInsert);
+      const ingredientsInsert = ingredients.map((name) => {
+        return {
+          name,
+          dishes_id,
+          user_id,
+        };
+      });
 
-    return response
-      .status(201)
-      .json({ message: { name, description, price, discount, user_id } });
+      const dish = await knex("ingredients").insert(ingredientsInsert);
+
+      return response.status(201).json(dish);
+    } catch (error) {
+      console.error("Error during dish creation:", error);
+      return response
+        .status(500)
+        .json({ error: "Erro durante a criação do prato" });
+    }
   }
 
   async searchDishes(request, response) {
