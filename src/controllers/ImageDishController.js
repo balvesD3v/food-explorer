@@ -27,18 +27,6 @@ class ImageDishController {
     await knex("dishes").update(dish).where({ id: dish_id });
     return respose.json(dish);
   }
-
-  async getImage(request, response) {
-    const { id } = request.body;
-
-    const checkDishExists = await knex("dishes").select("*").where({ id: id });
-
-    if (!checkDishExists) {
-      throw new AppError("Este prato não existe");
-    }
-    console.log(checkDishExists);
-    return response.json(checkDishExists);
-  }
 }
 
 module.exports = ImageDishController;

@@ -42,6 +42,4 @@ dishesRoutes.patch(
   imageDishController.update
 );
 
-dishesRoutes.get("/image", imageDishController.getImage);
-
 module.exports = dishesRoutes;
