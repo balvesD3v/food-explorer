@@ -39,9 +39,7 @@ class DishesController {
 
       const dish = await knex("ingredients").insert(ingredientsInsert);
 
-      return response
-        .status(201)
-        .json({ name, description, ingredients, discount, categories, price });
+      return response.status(201).json(dish);
     } catch (error) {
       console.error("Error during dish creation:", error);
       return response
