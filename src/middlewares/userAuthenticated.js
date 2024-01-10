@@ -3,27 +3,23 @@ const AppError = require("../utils/AppError");
 const authConfig = require("../configs/auth");
 
 function userAuthenticated(request, response, next) {
-  const authHeader = request.headers;
+  const authHeader = request.headers.authorization;
 
-  if (!authHeader.cookie) {
+  if (!authHeader) {
     throw new AppError("JWT Token não informado", 401);
   }
 
-  const [, token] = authHeader.cookie.split("token=");
+  const [, token] = authHeader.split(" ");
 
   try {
     const { role, sub: user_id } = verify(token, authConfig.jwt.secret);
-
     request.user = {
       id: Number(user_id),
       role,
     };
 
     return next();
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
+  } catch {
     throw new AppError("JWT Token inválido", 401);
   }
 }

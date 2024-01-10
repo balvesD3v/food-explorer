@@ -20,7 +20,7 @@ class DishesController {
         throw new AppError("Um prato com o mesmo nome já existe");
       }
 
-      const [dishes_id] = await knex("dishes").insert({
+      const [dish_id] = await knex("dishes").insert({
         name,
         user_id,
         description,
@@ -32,14 +32,16 @@ class DishesController {
       const ingredientsInsert = ingredients.map((name) => {
         return {
           name,
-          dishes_id,
+          dishes_id: dish_id,
           user_id,
         };
       });
 
-      const dish = await knex("ingredients").insert(ingredientsInsert);
+      const insertInIngredients = await knex("ingredients").insert(
+        ingredientsInsert
+      );
 
-      return response.status(201).json(dish);
+      return response.status(201).json({ dish_id });
     } catch (error) {
       console.error("Error during dish creation:", error);
       return response
@@ -86,7 +88,8 @@ class DishesController {
   }
 
   async updateDish(request, response) {
-    const { newNameDish, newDescription, newDiscount, newPrice } = request.body;
+    const { newNameDish, newDescription, newDiscount, newPrice, newCategory } =
+      request.body;
     const { dish_id } = request.params;
 
     const dish = await knex("dishes").where({ id: dish_id }).first();
@@ -99,11 +102,12 @@ class DishesController {
       description: newDescription,
       discount: newDiscount,
       price: newPrice,
+      categories: newCategory,
     });
 
     const updatedDish = await knex("dishes").where({ id: dish_id }).first();
 
-    return response.json(updatedDish);
+    return response.json({ dish_id });
   }
 
   async deleteDish(request, response) {
@@ -118,6 +122,33 @@ class DishesController {
     await knex("dishes").where({ id: dish_id }).delete();
 
     return response.json("Prato deletado");
+  }
+
+  async deleteIngredient(request, response) {
+    const { id } = request.params;
+
+    const ingredients = await knex("ingredients").where({ id: id });
+
+    if (!ingredients.length) {
+      throw new AppError("Este ingrediente não existe", 404);
+    }
+
+    const result = await knex("ingredients").where({ id: id }).delete();
+
+    return response.json(result);
+  }
+
+  async addIngredient(request, response) {
+    const { dishes_id, name } = request.body;
+    const user_id = request.user.id;
+
+    const ingredient = await knex("ingredients").insert({
+      name,
+      dishes_id,
+      user_id,
+    });
+
+    return response.status(201).json({ ingredient });
   }
 }
 

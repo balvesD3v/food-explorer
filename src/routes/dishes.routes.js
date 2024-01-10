@@ -35,6 +35,10 @@ dishesRoutes.get("/:id", dishesController.showDishes);
 
 dishesRoutes.get("/", dishesController.searchDishes);
 
+dishesRoutes.delete("/ingredients/:id", dishesController.deleteIngredient);
+
+dishesRoutes.post("/ingredients", dishesController.addIngredient);
+
 dishesRoutes.patch(
   "/:dish_id/image",
   verifyUserAuthorization("admin"),

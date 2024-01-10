@@ -12,11 +12,9 @@ class ImageDishController {
     const dish = await knex("dishes").where({ id: dish_id }).first();
 
     if (!dish) {
-      throw new AppError(
-        "Somente usuários autenticados podem mudar o avatar",
-        401
-      );
+      throw new AppError("Este prato não existe", 404);
     }
+
     if (dish.image) {
       await diskStorage.deleteFile(dish.image);
     }
@@ -24,7 +22,9 @@ class ImageDishController {
     const filename = await diskStorage.saveFile(imageFileName);
     dish.image = filename;
 
-    await knex("dishes").update(dish).where({ id: dish_id });
+    await knex("dishes")
+      .update({ image: imageFileName })
+      .where({ id: dish_id });
     return respose.json(dish);
   }
 }
