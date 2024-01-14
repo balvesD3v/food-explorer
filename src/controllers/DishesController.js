@@ -51,29 +51,41 @@ class DishesController {
   }
 
   async searchDishes(request, response) {
-    const { name, ingredients, user_id } = request.query;
+    const { name, ingredients } = request.query;
 
-    let dishes;
+    try {
+      let dishes;
 
-    if (!name && !ingredients && !user_id) {
-      dishes = await knex("dishes").select("*");
-    } else if (ingredients) {
-      const filterIngredients = ingredients.split(",").map((tag) => tag.trim());
+      if (!name && !ingredients) {
+        // Se tanto name quanto ingredients não estiverem presentes,
+        // retorna todos os pratos
+        dishes = await knex("dishes").select("*");
+      } else if (ingredients) {
+        const filterIngredients = ingredients
+          .split(",")
+          .map((tag) => tag.trim());
 
-      dishes = await knex("ingredients")
-        .select(["dishes.id", "dishes.name", "dishes.user_id"])
-        .join("dishes", "dishes.id", "ingredients.dishes_id")
-        .where("dishes.user_id", user_id)
-        .where("dishes.name", "like", `%${name}%`)
-        .whereIn("ingredients.name", filterIngredients);
-    } else {
-      dishes = await knex("dishes")
-        .where({ user_id })
-        .whereLike("name", `%${name}%`)
-        .orderBy("name");
+        // Se ingredients estiver presente, mas não name, realiza uma busca
+        // considerando apenas os ingredients
+        dishes = await knex("dishes")
+          .select(["dishes.id", "dishes.name", "dishes.user_id"])
+          .join("ingredients", "dishes.id", "ingredients.dishes_id")
+          .where("dishes.name", "like", `%${name || ""}%`)
+          .whereIn("ingredients.name", filterIngredients)
+          .orderBy("dishes.name");
+      } else {
+        // Se name estiver presente, mas não ingredients, realiza uma busca
+        // considerando apenas o name
+        dishes = await knex("dishes")
+          .where("name", "like", `%${name}%`)
+          .orderBy("name");
+      }
+
+      return response.json(dishes);
+    } catch (error) {
+      console.error("Erro no servidor:", error);
+      return response.status(500).json({ error: "Erro interno do servidor" });
     }
-
-    return response.json(dishes);
   }
 
   async showDishes(request, response) {
