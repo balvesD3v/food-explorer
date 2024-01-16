@@ -51,40 +51,50 @@ class DishesController {
   }
 
   async searchDishes(request, response) {
-    const { name, ingredients } = request.query;
+    const { name, ingredients, user_id } = request.query;
+    console.log("Search request:", request.query);
 
     try {
       let dishes;
 
-      if (!name && !ingredients) {
-        // Se tanto name quanto ingredients não estiverem presentes,
-        // retorna todos os pratos
-        dishes = await knex("dishes").select("*");
-      } else if (ingredients) {
+      if (ingredients) {
         const filterIngredients = ingredients
           .split(",")
           .map((tag) => tag.trim());
 
-        // Se ingredients estiver presente, mas não name, realiza uma busca
-        // considerando apenas os ingredients
-        dishes = await knex("dishes")
+        dishes = await knex("ingredients")
           .select(["dishes.id", "dishes.name", "dishes.user_id"])
-          .join("ingredients", "dishes.id", "ingredients.dishes_id")
-          .where("dishes.name", "like", `%${name || ""}%`)
+          .where("dishes.user_id", user_id)
+          .whereLike("dishes.name", `%${name}%`)
           .whereIn("ingredients.name", filterIngredients)
+          .innerJoin("dishes", "dishes.id", "ingredients.dishes_id")
           .orderBy("dishes.name");
       } else {
-        // Se name estiver presente, mas não ingredients, realiza uma busca
-        // considerando apenas o name
-        dishes = await knex("dishes")
-          .where("name", "like", `%${name}%`)
-          .orderBy("name");
+        if (!name) {
+          dishes = await knex("dishes").orderBy("name");
+        }
       }
 
-      return response.json(dishes);
+      const userIngredients = await knex("ingredients").where({ user_id });
+      console.log("User ingredients:", userIngredients);
+
+      const dishWithTags = dishes
+        ? dishes.map((dish) => {
+            const dishIngredient = userIngredients.filter(
+              (ingredient) => ingredient.dishes_id === dish.id
+            );
+            return {
+              ...dish,
+              ingredients: dishIngredient,
+            };
+          })
+        : [];
+      console.log("Dishes with tags:", dishWithTags);
+
+      return response.json(dishWithTags);
     } catch (error) {
-      console.error("Erro no servidor:", error);
-      return response.status(500).json({ error: "Erro interno do servidor" });
+      console.error("Error searching dishes:", error);
+      return response.status(500).json({ error: "Internal Server Error" });
     }
   }
 
