@@ -51,7 +51,7 @@ class DishesController {
   }
 
   async searchDishes(request, response) {
-    const { name, ingredients, user_id } = request.query;
+    const { name, ingredients } = request.query;
     console.log("Search request:", request.query);
 
     try {
@@ -64,34 +64,44 @@ class DishesController {
 
         dishes = await knex("ingredients")
           .select(["dishes.id", "dishes.name", "dishes.user_id"])
-          .where("dishes.user_id", user_id)
           .whereLike("dishes.name", `%${name}%`)
           .whereIn("ingredients.name", filterIngredients)
           .innerJoin("dishes", "dishes.id", "ingredients.dishes_id")
-          .orderBy("dishes.name");
+          .orderBy("dishes.name")
+          .distinct();
+      } else if (name) {
+        dishes = await knex("dishes")
+          .select([
+            "dishes.id",
+            "dishes.name",
+            "dishes.user_id",
+            "dishes.categories",
+            "dishes.description",
+            "dishes.price",
+            "dishes.image",
+          ])
+          .whereLike("dishes.name", `%${name}%`)
+          .orderBy("name");
       } else {
-        if (!name) {
-          dishes = await knex("dishes").orderBy("name");
-        }
+        dishes = await knex("dishes").orderBy("name");
       }
 
-      const userIngredients = await knex("ingredients").where({ user_id });
+      const userIngredients = await knex("ingredients");
       console.log("User ingredients:", userIngredients);
 
-      const dishWithTags = dishes
-        ? dishes.map((dish) => {
-            const dishIngredient = userIngredients.filter(
-              (ingredient) => ingredient.dishes_id === dish.id
-            );
-            return {
-              ...dish,
-              ingredients: dishIngredient,
-            };
-          })
-        : [];
-      console.log("Dishes with tags:", dishWithTags);
+      const dishWithIngredient = dishes.map((dish) => {
+        const dishIngredient = userIngredients.filter(
+          (ingredient) => ingredient.dishes_id === dish.id
+        );
+        return {
+          ...dish,
+          ingredients: dishIngredient,
+        };
+      });
 
-      return response.json(dishWithTags);
+      console.log("Dishes with tags:", dishWithIngredient);
+
+      return response.json(dishWithIngredient);
     } catch (error) {
       console.error("Error searching dishes:", error);
       return response.status(500).json({ error: "Internal Server Error" });
@@ -144,33 +154,6 @@ class DishesController {
     await knex("dishes").where({ id: dish_id }).delete();
 
     return response.json("Prato deletado");
-  }
-
-  async deleteIngredient(request, response) {
-    const { id } = request.params;
-
-    const ingredients = await knex("ingredients").where({ id: id });
-
-    if (!ingredients.length) {
-      throw new AppError("Este ingrediente não existe", 404);
-    }
-
-    const result = await knex("ingredients").where({ id: id }).delete();
-
-    return response.json(result);
-  }
-
-  async addIngredient(request, response) {
-    const { dishes_id, name } = request.body;
-    const user_id = request.user.id;
-
-    const ingredient = await knex("ingredients").insert({
-      name,
-      dishes_id,
-      user_id,
-    });
-
-    return response.status(201).json({ ingredient });
   }
 }
 
